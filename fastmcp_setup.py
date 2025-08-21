@@ -64,7 +64,7 @@ class FastMCPSetup:
             self.vscode_user_dir = Path.home() / ".config" / "Code" / "User"
         
         self.success_count = 0
-        self.total_steps = 8  # Added version selection step
+        self.total_steps = 7  # Base steps, will be updated if version selection needed
 
     def print_header(self):
         """Print setup header."""
@@ -85,9 +85,9 @@ class FastMCPSetup:
         print("-" * 40)
         
         if auto_mode:
-            # Default to offline version in auto mode for simplicity
-            self.server_version = "offline"
-            print("🤖 Auto mode: Selected Offline version (fast, reliable)")
+            # Default to web version in auto mode for latest features
+            self.server_version = "web"
+            print("🤖 Auto mode: Selected Web-enabled version (live guidance)")
             self.server_file = self.project_dir / self.server_options[self.server_version]["file"]
             self.success_count += 1
             return True
@@ -103,22 +103,22 @@ class FastMCPSetup:
             print()
         
         print("💡 Recommendation:")
+        print("   • Choose WEB for: Latest guidance, live examples, always up-to-date (recommended)")
         print("   • Choose OFFLINE for: Fast setup, offline work, stable environments")
-        print("   • Choose WEB for: Latest guidance, live examples, internet-connected work")
         print()
         
         # Get user choice
         while True:
-            choice = input("Select version [offline/web] (default: offline): ").strip().lower()
+            choice = input("Select version [web/offline] (default: web): ").strip().lower()
             
-            if not choice or choice == "offline":
-                self.server_version = "offline"
-                break
-            elif choice == "web":
+            if not choice or choice == "web":
                 self.server_version = "web"
                 break
+            elif choice == "offline":
+                self.server_version = "offline"
+                break
             else:
-                print("❌ Invalid choice. Please enter 'offline' or 'web'")
+                print("❌ Invalid choice. Please enter 'web' or 'offline'")
         
         selected_option = self.server_options[self.server_version]
         self.server_file = self.project_dir / selected_option["file"]
@@ -278,10 +278,58 @@ class FastMCPSetup:
                 "description": f"FastMCP server - {selected_option['description']}",
                 "server_type": f"fastmcp_{self.server_version}",
                 "capabilities": {
+                    "tools": True,
+                    "resources": True,
+                    "prompts": False,
+                    "logging": True,
                     "web_enabled": self.server_version == "web",
                     "live_content": self.server_version == "web",
                     "offline_capable": True
-                }
+                },
+                "tools": [
+                    {
+                        "name": "analyze_content",
+                        "description": "Analyze content against Microsoft Style Guide principles",
+                        "category": "analysis",
+                        "parameters": {
+                            "text": "string",
+                            "analysis_type": "string (optional)"
+                        }
+                    },
+                    {
+                        "name": "get_style_guidelines",
+                        "description": "Get Microsoft Style Guide guidelines for a specific category",
+                        "category": "reference",
+                        "parameters": {
+                            "category": "string (optional)"
+                        }
+                    },
+                    {
+                        "name": "suggest_improvements",
+                        "description": "Get improvement suggestions for content",
+                        "category": "suggestions",
+                        "parameters": {
+                            "text": "string",
+                            "focus_area": "string (optional)"
+                        }
+                    },
+                    {
+                        "name": "search_style_guide",
+                        "description": "Search Microsoft Style Guide for specific guidance",
+                        "category": "search",
+                        "parameters": {
+                            "query": "string"
+                        }
+                    }
+                ] + ([{
+                    "name": "get_official_guidance",
+                    "description": "Get live official guidance from Microsoft Style Guide",
+                    "category": "web",
+                    "parameters": {
+                        "issue_type": "string",
+                        "specific_term": "string (optional)"
+                    }
+                }] if self.server_version == "web" else [])
             }
         }
         
@@ -292,19 +340,65 @@ class FastMCPSetup:
             "clients": {
                 "vscode": {
                     "enabled": True,
-                    "autoStart": True
+                    "autoStart": True,
+                    "showStatusBar": True,
+                    "toolsInCommandPalette": True
                 },
                 "copilot": {
                     "enabled": True,
+                    "exposeToChat": True,
+                    "chatCommands": [
+                        {
+                            "command": "analyze",
+                            "description": "Analyze content for Microsoft Style Guide compliance",
+                            "tool": "analyze_content"
+                        },
+                        {
+                            "command": "improve",
+                            "description": "Get improvement suggestions",
+                            "tool": "suggest_improvements"
+                        },
+                        {
+                            "command": "guidelines",
+                            "description": "Get style guidelines",
+                            "tool": "get_style_guidelines"
+                        },
+                        {
+                            "command": "search",
+                            "description": "Search style guide",
+                            "tool": "search_style_guide"
+                        }
+                    ]
+                },
+                "claude": {
+                    "enabled": True,
                     "exposeToChat": True
                 }
+            },
+            "ui": {
+                "showServerStatus": True,
+                "enableNotifications": True,
+                "serverIcon": "📝",
+                "statusBarText": "MS Style Guide"
+            },
+            "logging": {
+                "level": "info",
+                "file": ".mcp/logs/microsoft-style-guide.log",
+                "maxFileSize": "10MB",
+                "maxFiles": 5
             },
             "metadata": {
                 "setup_version": f"fastmcp-{self.server_version}-1.0.0",
                 "created_by": "FastMCP Setup Script",
                 "server_version": self.server_version,
                 "server_file": str(self.server_file),
-                "last_updated": self._get_current_timestamp()
+                "last_updated": self._get_current_timestamp(),
+                "documentation": "https://learn.microsoft.com/en-us/style-guide/",
+                "support": {
+                    "issues": "https://github.com/your-repo/issues",
+                    "docs": "README.md",
+                    "examples": "COPILOT_USAGE.md"
+                }
             }
         }
         
@@ -316,7 +410,7 @@ class FastMCPSetup:
                 
                 # Backup existing config
                 backup_path = mcp_json_path.with_suffix('.json.backup')
-                with open(backup_path, 'w') as f:
+                with open(backup_path, 'w', encoding='utf-8') as f:
                     json.dump(existing_config, f, indent=2)
                 print(f"✅ Backed up existing config to {backup_path}")
                 
@@ -337,7 +431,7 @@ class FastMCPSetup:
                 print("⚠️  Existing mcp.json has invalid JSON, creating new one")
         
         # Write the configuration
-        with open(mcp_json_path, 'w') as f:
+        with open(mcp_json_path, 'w', encoding='utf-8') as f:
             json.dump(mcp_config, f, indent=2)
         
         print(f"✅ Global MCP configuration created: {mcp_json_path}")
@@ -385,7 +479,7 @@ class FastMCPSetup:
         }
         
         launch_path = vscode_workspace_dir / "launch.json"
-        with open(launch_path, 'w') as f:
+        with open(launch_path, 'w', encoding='utf-8') as f:
             json.dump(launch_config, f, indent=2)
         print(f"✅ Debug configuration created: {launch_path}")
         
@@ -406,7 +500,7 @@ class FastMCPSetup:
         }
         
         settings_path = vscode_workspace_dir / "settings.json"
-        with open(settings_path, 'w') as f:
+        with open(settings_path, 'w', encoding='utf-8') as f:
             json.dump(workspace_settings, f, indent=2)
         print(f"✅ Workspace settings created: {settings_path}")
         print(f"   Configured for: {selected_option['name']}")
@@ -459,32 +553,56 @@ async def main():
     command = sys.argv[1].lower()
     content = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else ""
     
-    # Import the server tools directly for quick integration
+    # Import and initialize the analyzer for direct tool access
     try:
         sys.path.append(str(Path(__file__).parent))
-        from {selected_option['file'][:-3]} import analyze_content, suggest_improvements, get_style_guidelines, search_style_guide
+        
+        # Try web version first (if configured), then fall back to offline
+        if "{self.server_version}" == "web":
+            try:
+                from fastmcp_style_server_web import WebEnabledStyleGuideAnalyzer
+                analyzer = WebEnabledStyleGuideAnalyzer()
+                server_type = "web"
+            except ImportError:
+                from fastmcp_style_server import MicrosoftStyleGuideAnalyzer, search_style_guide
+                analyzer = MicrosoftStyleGuideAnalyzer()
+                server_type = "offline"
+        else:
+            from fastmcp_style_server import MicrosoftStyleGuideAnalyzer, search_style_guide
+            analyzer = MicrosoftStyleGuideAnalyzer()
+            server_type = "offline"
         
         if command in ["analyze", "check", "review"]:
             if not content:
                 print("Error: No content provided for analysis")
                 return
-            result = await analyze_content(content, "comprehensive")
+            if server_type == "web":
+                result = await analyzer.analyze_content(content, "comprehensive")
+            else:
+                result = analyzer.analyze_content(content, "comprehensive")
             
         elif command in ["improve", "suggest", "fix"]:
             if not content:
                 print("Error: No content provided for improvements")
                 return
-            result = await suggest_improvements(content, "all")
+            if server_type == "web":
+                result = await analyzer.suggest_improvements(content, "all")
+            else:
+                result = analyzer.suggest_improvements(content, "all")
             
         elif command in ["guidelines", "guide", "help"]:
             category = content or "all"
-            result = get_style_guidelines(category)
+            result = analyzer.get_style_guidelines(category)
             
         elif command in ["search", "find"]:
             if not content:
                 print("Error: No search query provided")
                 return
-            result = await search_style_guide(content)
+            if server_type == "offline":
+                result = search_style_guide(content)
+            else:
+                # For web version, use search capability if available
+                result = {{"status": "info", "message": "Search functionality varies by server version"}}
             
         else:
             result = {{
@@ -512,14 +630,14 @@ async def main():
             
     except ImportError as e:
         print(f"Error: Could not import FastMCP server: {{e}}")
-        print(f"Please ensure {{selected_option['file']}} is in the same directory")
+        print("Please ensure both fastmcp_style_server.py and fastmcp_style_server_web.py are in the same directory")
 
 if __name__ == "__main__":
     asyncio.run(main())
 '''
         
         copilot_path = self.project_dir / "copilot_integration.py"
-        with open(copilot_path, 'w') as f:
+        with open(copilot_path, 'w', encoding='utf-8') as f:
             f.write(copilot_script)
         print(f"✅ Copilot integration script created: {copilot_path}")
         print(f"   Configured for: {selected_option['name']}")
@@ -602,7 +720,7 @@ Once the MCP server is running, these tools are available:
 """
         
         usage_path = self.project_dir / "COPILOT_USAGE.md"
-        with open(usage_path, 'w') as f:
+        with open(usage_path, 'w', encoding='utf-8') as f:
             f.write(example_usage)
         print(f"✅ Usage examples created: {usage_path}")
         
@@ -652,7 +770,7 @@ This test document is configured for the **{self.server_version}** version:
 '''
         
         test_path = self.project_dir / "test_document.md"
-        with open(test_path, 'w') as f:
+        with open(test_path, 'w', encoding='utf-8') as f:
             f.write(test_content)
         print(f"✅ Test document created: {test_path}")
         
@@ -735,7 +853,14 @@ This test document is configured for the **{self.server_version}** version:
                 return False
         
         # Run setup steps
-        steps = [
+        steps = []
+        
+        # Only add version selection if not already set
+        if not self.server_version:
+            steps.append(lambda: self.select_server_version(auto_mode))
+            self.total_steps = 8  # Include version selection step
+        
+        steps.extend([
             self.check_dependencies,
             self.create_server_file,
             self.test_server,
@@ -743,7 +868,7 @@ This test document is configured for the **{self.server_version}** version:
             self.setup_workspace_config,
             self.setup_copilot_integration,
             self.create_test_content
-        ]
+        ])
         
         for step in steps:
             if not step():
@@ -763,18 +888,18 @@ def main():
         epilog="""
 Examples:
   python fastmcp_setup.py                    # Interactive setup with version choice
-  python fastmcp_setup.py --auto             # Auto setup (defaults to offline)
+  python fastmcp_setup.py --auto             # Auto setup (defaults to web)
   python fastmcp_setup.py --offline          # Force offline version
   python fastmcp_setup.py --web              # Force web-enabled version
   python fastmcp_setup.py --copilot          # Setup with Copilot Chat focus
   
 Version Comparison:
+  Web:      Live content from Microsoft Learn, always up-to-date, requires internet (default)
   Offline:  Fast, reliable, works without internet, local analysis only
-  Web:      Live content from Microsoft Learn, always up-to-date, requires internet
         """
     )
     parser.add_argument("--auto", action="store_true", 
-                       help="Run setup without prompts (defaults to offline version)")
+                       help="Run setup without prompts (defaults to web version)")
     parser.add_argument("--offline", action="store_true",
                        help="Force offline version selection")
     parser.add_argument("--web", action="store_true", 
@@ -812,7 +937,7 @@ Version Comparison:
     try:
         success = setup.run_setup(auto_mode=auto_mode)
         
-        if success and (args.offline or args.web):
+        if success and (args.offline or args.web) and setup.server_version:
             selected_option = setup.server_options[setup.server_version]
             print(f"\n🎯 Command Line Setup Complete!")
             print(f"   Version: {selected_option['name']}")

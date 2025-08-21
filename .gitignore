@@ -56,7 +56,11 @@ logs/
 *_ANALYSIS_REPORT.md
 test_*.py
 temp_*.py
+test_document.md
+copilot_usage.md
+mcp_client.py
 
 # MCP specific
 .mcp/
 mcp_logs/
+mcp.json
