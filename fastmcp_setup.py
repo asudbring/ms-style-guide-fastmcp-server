@@ -160,9 +160,9 @@ class FastMCPSetup:
             except ImportError:
                 print(f"🔄 Installing {dependency}...")
                 try:
-                    subprocess.check_call([
+                    subprocess.run([
                         self.python_executable, "-m", "pip", "install", dependency
-                    ], capture_output=True)
+                    ], capture_output=True, check=True)
                     print(f"✅ {dependency} installed successfully")
                 except subprocess.CalledProcessError:
                     print(f"⚠️  {dependency} installation failed, will use fallback mode")
@@ -174,9 +174,9 @@ class FastMCPSetup:
         except ImportError:
             print("🔄 Installing MCP as fallback...")
             try:
-                subprocess.check_call([
+                subprocess.run([
                     self.python_executable, "-m", "pip", "install", "mcp"
-                ], capture_output=True)
+                ], capture_output=True, check=True)
                 print("✅ MCP installed successfully")
             except subprocess.CalledProcessError:
                 print("⚠️  MCP installation failed, server will run in basic mode")
