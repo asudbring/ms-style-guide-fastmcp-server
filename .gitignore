@@ -56,7 +56,27 @@ logs/
 *_ANALYSIS_REPORT.md
 test_*.py
 temp_*.py
+test_document.md
 
 # MCP specific
 .mcp/
 mcp_logs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
