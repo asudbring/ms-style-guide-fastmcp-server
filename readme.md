@@ -6,8 +6,8 @@ A streamlined, cross-platform MCP server for analyzing content against the **Mic
 
 ```bash
 # Clone or download this repository
-git clone https://github.com/your-username/mslearn-authoring-mcp-server.git
-cd mslearn-authoring-mcp-server
+git clone https://github.com/asudbring/ms-style-guide-fastmcp-server.git
+cd ms-style-guide-fastmcp-server
 
 # Interactive setup (choose your version)
 python fastmcp_setup.py
@@ -84,15 +84,15 @@ python fastmcp_setup.py --web        # Live content from Microsoft Learn
 ## 📁 Project Structure (Both Versions)
 
 ```
-microsoft-style-guide-fastmcp/
+ms-style-guide-fastmcp-server/
 ├── fastmcp_style_server.py         # Offline FastMCP server
 ├── fastmcp_style_server_web.py     # Web-enabled FastMCP server  
 ├── fastmcp_setup.py                # Intelligent setup script
 ├── mcp.json                        # VS Code MCP configuration
-├── copilot_integration.py          # Version-aware Copilot integration
-├── test_document.md                # Version-specific test content
-├── COPILOT_USAGE.md               # Version-aware usage examples
-└── README.md                       # This file
+├── mcp_client.py                   # MCP client utilities
+├── copilot_usage.md                # Usage examples and documentation
+├── requirements.txt                # Python dependencies
+└── readme.md                       # This file
 ```
 
 ## 🎯 Microsoft Style Guide Analysis
@@ -290,11 +290,11 @@ python fastmcp_style_server_web.py --test
 ### 2. Test Copilot Integration
 ```bash
 # Test with your installed version
-python copilot_integration.py analyze "Hello, you can easily set up your account!"
+python mcp_client.py analyze "Hello, you can easily set up your account!"
 ```
 
 ### 3. Test in VS Code
-1. Open the test document: `test_document.md`
+1. Open a markdown file for testing
 2. Use Copilot Chat: `@workspace analyze this document`
 3. Check that MCP tools appear in Command Palette
 4. Verify correct version is running in MCP server list
@@ -391,7 +391,7 @@ python fastmcp_style_server.py --test
 
 ### Copilot Chat Not Working
 1. Ensure GitHub Copilot Chat extension is installed
-2. Check that `copilot_integration.py` is executable
+2. Check that `mcp_client.py` is executable
 3. Verify script can import the server module
 
 ## 🔄 Migration from Original Version
@@ -428,9 +428,9 @@ guidelines = analyzer.get_style_guidelines("accessibility")
 
 ### Batch Processing
 ```bash
-# Analyze multiple files
+# Analyze multiple files using mcp_client
 for file in *.md; do
-    python copilot_integration.py analyze "$(cat $file)"
+    python mcp_client.py analyze "$(cat $file)"
 done
 ```
 
@@ -439,7 +439,7 @@ done
 # GitHub Actions example
 - name: Check Style Guide Compliance
   run: |
-    python copilot_integration.py analyze "$(cat README.md)"
+    python mcp_client.py analyze "$(cat README.md)"
 ```
 
 ## 🤝 Contributing
