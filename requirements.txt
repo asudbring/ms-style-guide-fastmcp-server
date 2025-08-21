@@ -1,68 +1,13 @@
 # Microsoft Style Guide MCP Server - FastMCP Implementation
 # 
-# Core Python version requirement: Python 3.8+
-# This project requires Python 3.8 or higher for asyncio and typing support
+# Requires Python 3.8+ for asyncio and typing support
 # 
-# SUMMARY OF DEPENDENCIES:
-# - fastmcp: Simplified MCP server framework (replaces custom MCP implementation)
-# - aiohttp: Required for web version HTTP requests to Microsoft Style Guide
-# - httpx: Alternative HTTP client with better async support
-# - regex: Enhanced regex support (fallback to built-in 're' if unavailable)
-# 
-# All other dependencies are from Python standard library
+# Core dependencies:
+# - fastmcp: Simplified MCP server framework
+# - aiohttp: Required for web-enabled version HTTP requests
 
-# Core FastMCP dependency - provides simplified MCP server framework
+# Core FastMCP dependency
 fastmcp>=0.4.0
 
-# HTTP clients for web-enabled functionality
-# aiohttp for async HTTP requests in web version
+# HTTP client for web-enabled functionality
 aiohttp>=3.8.0
-
-# httpx as alternative HTTP client with better cross-platform support
-httpx>=0.24.0
-
-# Enhanced regex support (fallback to built-in 're' if unavailable)
-regex>=2023.10.3
-
-# Cross-platform utilities
-# pathlib is built-in but included for clarity on cross-platform file handling
-pathlib2>=2.3.0; python_version < "3.4"
-
-# Development and testing dependencies (optional but recommended)
-# Uncomment these for development environment setup
-
-# Testing framework
-# pytest>=7.4.3
-# pytest-asyncio>=0.21.1
-
-# Code formatting and linting
-# black>=23.9.1
-# flake8>=6.1.0
-# mypy>=1.6.1
-
-# Enhanced text analysis (optional - uncomment if advanced text analysis is needed)
-# nltk>=3.8.1
-# textstat>=0.7.3
-
-# HTML parsing for better web scraping (optional - for enhanced web functionality)
-# beautifulsoup4>=4.12.0
-
-# Enhanced logging and CLI experience (optional)
-# colorlog>=6.7.0
-# rich>=13.6.0
-
-# Cross-platform process management
-# psutil>=5.9.0
-
-# Security and networking (optional but recommended for production)
-# certifi>=2023.7.22  # For SSL certificate validation
-# charset-normalizer>=3.3.0  # For character encoding detection
-
-# Windows-specific dependencies (installed automatically on Windows)
-# pywin32>=306; sys_platform == "win32"  # Windows API access
-
-# macOS-specific dependencies (installed automatically on macOS)
-# pyobjc-core>=9.0; sys_platform == "darwin"  # macOS API access
-
-# Linux-specific dependencies (for better desktop integration)
-# python-dbus>=1.2.18; sys_platform == "linux"  # Linux D-Bus support
