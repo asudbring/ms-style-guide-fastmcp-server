@@ -755,18 +755,25 @@ async def main():
     args = parser.parse_args()
     
     if args.test:
-        # Run a quick test
+        # Run a quick test - use analyzer directly to avoid FastMCP tool wrapper issues
         test_text = "You can easily configure the settings to suit your needs."
-        result = await analyze_content(test_text)
-        print("Test Result:", json.dumps(result, indent=2))
+        try:
+            result = await analyzer.analyze_content(test_text)
+            print("Test Result:", json.dumps(result, indent=2))
+        finally:
+            # Ensure session cleanup even during test
+            await analyzer.close_session()
         return
     
     logger.info("Starting Microsoft Style Guide MCP Server (FastMCP Web-Enabled)")
     logger.info(f"Will fetch live content from: {analyzer.style_guide_base_url}")
     
     try:
-        if hasattr(app, 'run_stdio'):
-            # FastMCP or standard MCP
+        if hasattr(app, 'run_stdio_async'):
+            # FastMCP
+            await app.run_stdio_async()
+        elif hasattr(app, 'run_stdio'):
+            # Standard MCP
             await app.run_stdio()
         else:
             # Mock implementation
