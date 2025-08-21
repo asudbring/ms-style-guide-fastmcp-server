@@ -135,24 +135,24 @@ Both versions support the same natural language commands, but provide different 
 
 #### Basic Commands (Both Versions)
 ```
-@workspace analyze this content for Microsoft Style Guide compliance:
+analyze this content for Microsoft Style Guide compliance:
 "Welcome to our new product! You can easily configure the settings."
 
-@workspace check voice and tone of this text:
+check voice and tone of this text:
 "The configuration can be accomplished by users through the interface."
 
-@workspace suggest improvements for this writing:
+suggest improvements for this writing:
 "Users should utilize the functionality to facilitate optimal performance."
 
-@workspace show Microsoft Style Guide guidelines for accessibility
+show Microsoft Style Guide guidelines for accessibility
 ```
 
 #### Web-Enhanced Commands (Web Version Only)
 ```
-@workspace search the Microsoft Style Guide for "active voice examples"
-@workspace get live guidance on "inclusive language best practices"
-@workspace fetch current Microsoft terminology standards
-@workspace find official examples for "contractions in technical writing"
+search the Microsoft Style Guide for "active voice examples"
+get live guidance on "inclusive language best practices"
+fetch current Microsoft terminology standards
+find official examples for "contractions in technical writing"
 ```
 
 ### Command Responses by Version
