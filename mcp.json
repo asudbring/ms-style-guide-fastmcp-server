@@ -2,7 +2,7 @@
   "servers": {
     "microsoft-style-guide": {
       "command": "python",
-      "args": ["fastmcp_style_server.py"],
+      "args": ["fastmcp_style_server_web.py"],
       "env": {
         "PYTHONPATH": "."
       },
