@@ -1008,4 +1008,384 @@ if MCP_AVAILABLE:
 
             # Add rewrite examples with official guidance
             for i, example in enumerate(review['rewrite_examples'], 1):
-                summary += f
+                summary += f"""
+
+### {i}. {example['category']}
+**Before:** {example['before']}
+**After:** {example['after']}
+**Why:** {example['explanation']}"""
+                
+                # Add official guidance if available
+                if 'official_guidance' in example:
+                    summary += f"""
+**Official Guidance:** {example['official_guidance']}"""
+
+            # Add live guidance if available from the review
+            if review.get('live_guidance'):
+                summary += f"""
+
+🌐 **Live Official Guidance Retrieved:**"""
+                for issue_type, guidance in review['live_guidance'].items():
+                    summary += f"""
+{issue_type.title()}: {guidance['title']}
+📎 {guidance['url']}"""
+
+            summary += f"""
+
+## Microsoft Style Guide Resources (Web-Enhanced)
+📚 **Official Guide:** {review['style_guide_url']}
+📖 **Voice & Tone:** {review['style_guide_url']}/brand-voice-above-all-simple-human
+🔍 **Word List:** {review['style_guide_url']}/a-z-word-list-term-collections
+♿ **Accessibility:** {review['style_guide_url']}/bias-free-communication
+⚡ **Web-Enabled:** Live guidance from Microsoft Learn"""
+
+            return {"formatted_review": summary, "detailed_data": review}
+        
+        @app.tool()
+        async def get_style_guidelines(category: str = "all") -> Dict[str, Any]:
+            """Get Microsoft Style Guide guidelines for a specific category with web enhancements."""
+            guidelines = analyzer.get_style_guidelines(category)
+            
+            # Format for display
+            response = f"""📚 Microsoft Writing Style Guide - {category.title()} Guidelines (Web-Enhanced)
+
+🌐 **Official Documentation:** {guidelines['base_url']}
+
+"""
+            
+            for principle_name, principle_data in guidelines['principles'].items():
+                response += f"## {principle_name.replace('_', ' ').title()}\n\n"
+                
+                if isinstance(principle_data, dict):
+                    for key, value in principle_data.items():
+                        if key == "official_url":
+                            response += f"**🌐 Live Official Guide:** {value}\n\n"
+                            continue
+                        response += f"**{key.replace('_', ' ').title()}:**\n"
+                        if isinstance(value, list):
+                            for item in value:
+                                response += f"• {item}\n"
+                        else:
+                            response += f"• {value}\n"
+                        response += "\n"
+                elif isinstance(principle_data, str):
+                    response += f"• {principle_data}\n\n"
+            
+            return {"formatted": response, "data": guidelines}
+        
+        @app.tool()
+        async def suggest_improvements(text: str, focus_area: str = "all") -> Dict[str, Any]:
+            """Get improvement suggestions for content with live guidance."""
+            if not text.strip():
+                return {"error": "No text provided for improvement suggestions"}
+            
+            improvements = await analyzer.suggest_improvements(text, focus_area)
+            
+            # Format for display
+            response = f"""💡 Microsoft Style Guide Improvement Suggestions (Web-Enhanced)
+
+**Text:** "{improvements['text_preview']}"
+**Focus Area:** {focus_area.replace('_', ' ').title()}
+**Total Improvements:** {improvements['total_improvements']}
+
+"""
+            
+            if improvements['improvements']:
+                response += "**Specific Improvements:**\n"
+                for i, improvement in enumerate(improvements['improvements'], 1):
+                    severity_icon = "🔴" if improvement['severity'] == "error" else "⚠️" if improvement['severity'] == "warning" else "ℹ️"
+                    response += f"{i}. {severity_icon} **{improvement['type'].replace('_', ' ').title()}:** {improvement['suggestion']}\n"
+                response += "\n"
+            else:
+                response += "✅ **No improvements needed** - content follows Microsoft Style Guide well!\n\n"
+            
+            # Add live guidance if available
+            if improvements.get('live_guidance'):
+                response += f"🌐 **Live Official Guidance:**\n"
+                for issue_type, guidance in improvements['live_guidance'].items():
+                    response += f"• {issue_type.title()}: {guidance['title']} - {guidance['url']}\n"
+                response += "\n"
+            
+            response += f"📚 **Reference:** {improvements['style_guide_url']}\n⚡ **Web-Enabled:** Live guidance from Microsoft Learn"
+            
+            return {"formatted": response, "data": improvements}
+        
+        @app.tool()
+        async def search_style_guide_live(query: str) -> Dict[str, Any]:
+            """Search Microsoft Style Guide website for live guidance."""
+            if not query.strip():
+                return {"error": "No search query provided"}
+            
+            search_results = await analyzer.search_style_guide_live(query)
+            
+            # Format for display
+            response = f"""🔍 Microsoft Style Guide Live Search Results (Web-Enhanced)
+
+**Query:** "{query}"
+**Results Found:** {search_results.get('total_found', 0)}
+**Web-Enabled:** ✅ Live content from Microsoft Learn
+
+"""
+            
+            if search_results.get('results'):
+                response += "**Top Results:**\n"
+                for i, result in enumerate(search_results['results'], 1):
+                    relevance_icon = "🎯" if result['relevance'] == "high" else "📍"
+                    response += f"{i}. {relevance_icon} **{result['title']}**\n"
+                    response += f"   Section: {result['section'].replace('_', ' ').title()}\n"
+                    response += f"   URL: {result['url']}\n"
+                    response += f"   Preview: {result['content_preview'][:150]}...\n\n"
+            else:
+                response += "No specific results found. Try broader search terms.\n\n"
+            
+            response += f"💡 **Tip:** Visit the URLs above for the most current official guidance on your query."
+            
+            return {"formatted": response, "data": search_results}
+        
+        @app.tool()
+        async def get_official_guidance(topic: str) -> Dict[str, Any]:
+            """Get official guidance from Microsoft Style Guide for a specific topic."""
+            if not topic.strip():
+                return {"error": "No topic provided"}
+            
+            guidance_results = await analyzer.get_official_guidance(topic)
+            
+            # Format for display
+            response = f"""📖 Official Microsoft Style Guide Guidance (Web-Enhanced)
+
+**Topic:** "{topic}"
+**Sources:** {len(guidance_results.get('guidance', []))} official sections
+**Web-Enabled:** ✅ Live content from Microsoft Learn
+
+"""
+            
+            if guidance_results.get('guidance'):
+                for i, guidance in enumerate(guidance_results['guidance'], 1):
+                    response += f"## {i}. {guidance['title']}\n"
+                    response += f"**Section:** {guidance['section'].replace('_', ' ').title()}\n"
+                    response += f"**Official URL:** {guidance['url']}\n\n"
+                    response += f"**Content Preview:**\n{guidance['content'][:300]}...\n\n"
+            else:
+                response += "No specific official guidance found for this topic.\n\n"
+            
+            response += f"🌐 **Official Style Guide:** https://learn.microsoft.com/en-us/style-guide/\n"
+            response += f"💡 **Tip:** Visit the official URLs above for complete guidance."
+            
+            return {"formatted": response, "data": guidance_results}
+
+        # Add prompt support if FastMCP supports it
+        if hasattr(app, 'prompt'):
+            @app.prompt()
+            def microsoft_style_guide_reviewer_web():
+                """Microsoft Style Guide Document Reviewer (Web-Enhanced) - Comprehensive review prompt with live guidance."""
+                return {
+                    "name": "microsoft_document_reviewer_web", 
+                    "description": "Performs comprehensive document review using Microsoft Style Guide criteria with live web guidance, providing detailed feedback on voice, clarity, structure, and user experience for technical writers.",
+                    "arguments": [
+                        {
+                            "name": "document_text",
+                            "description": "The document content to review",
+                            "required": True,
+                            "type": "string"
+                        },
+                        {
+                            "name": "document_type", 
+                            "description": "Type of document (api_docs, user_guide, tutorial, troubleshooting, general)",
+                            "required": False,
+                            "type": "string",
+                            "default": "general"
+                        },
+                        {
+                            "name": "target_audience",
+                            "description": "Intended audience (developer, end_user, admin, mixed, general)", 
+                            "required": False,
+                            "type": "string",
+                            "default": "general"
+                        },
+                        {
+                            "name": "review_focus",
+                            "description": "Specific areas to emphasize (voice_tone, structure, clarity, accessibility, all)",
+                            "required": False, 
+                            "type": "string",
+                            "default": "all"
+                        }
+                    ],
+                    "template": """You are a senior technical writing editor specializing in Microsoft Style Guide compliance with access to live guidance from Microsoft Learn. Review the provided document and provide comprehensive feedback using these evaluation criteria:
+
+## Document Context
+- **Type**: {{document_type}}
+- **Audience**: {{target_audience}}  
+- **Focus Areas**: {{review_focus}}
+- **Web-Enhanced**: Live guidance from official Microsoft Style Guide
+
+## Review Framework (Web-Enhanced)
+
+### 1. Microsoft Voice & Tone Assessment
+- **Warm and Relaxed**: Does the content use contractions and natural language?
+- **Crisp and Clear**: Is the content direct, scannable, and concise?
+- **Ready to Help**: Does it use action-oriented, supportive language?
+- **Live Verification**: Cross-reference with current Microsoft voice guidelines
+
+### 2. Technical Writing Quality (Current Standards)
+- **Clarity**: Are complex concepts explained clearly per current best practices?
+- **Completeness**: Does it cover all necessary information?
+- **Accuracy**: Is technical information precise and current?
+- **Structure**: Is information logically organized per Microsoft patterns?
+
+### 3. User Experience Evaluation (Latest Guidelines)
+- **Task Success**: Can users complete their goals with this content?
+- **Cognitive Load**: Is the information digestible?
+- **Error Prevention**: Does it help users avoid common mistakes?
+- **Accessibility**: Is it inclusive and barrier-free per current standards?
+
+### 4. Content Standards Compliance (Live Verification)
+- **Terminology**: Follows current Microsoft terminology standards
+- **Grammar**: Uses active voice, proper sentence structure
+- **Formatting**: Consistent with current Microsoft documentation patterns
+- **Cross-references**: Links and references are accurate and current
+
+## Required Output Format (Web-Enhanced)
+
+### Executive Summary
+- Overall quality score (1-10) with live guidance verification
+- Key strengths (2-3 points)
+- Critical issues (2-3 points) with official guidance links
+- Recommended next steps with current best practices
+
+### Detailed Analysis (Live Guidance)
+**Voice & Tone Issues**: [Specific examples with current official guidance]
+**Clarity Problems**: [Areas needing improvement per latest standards]
+**Structural Concerns**: [Organization issues with modern patterns]
+**User Experience Gaps**: [Where users might struggle per current research]
+**Compliance Issues**: [Microsoft Style Guide violations with official links]
+
+### Improvement Recommendations (Current Standards)
+**High Priority**: [Critical fixes per current guidelines]
+**Medium Priority**: [Important improvements for next revision]
+**Low Priority**: [Nice-to-have enhancements]
+
+### Official Examples (Live Content)
+Provide 2-3 "before/after" examples showing how to improve problematic sections using current Microsoft Style Guide principles with links to official guidance.
+
+### Live Guidance Summary
+Include relevant official Microsoft guidance URLs and current examples that support your recommendations.
+
+Please review this document with live Microsoft Style Guide verification: {{document_text}}"""
+                }
+    
+    except NameError:
+        # FastMCP not available, use standard MCP
+        logger.info("FastMCP not available, using standard MCP implementation")
+        MCP_AVAILABLE = False
+
+# Fallback for when MCP is not available
+if not MCP_AVAILABLE:
+    class MockApp:
+        def __init__(self, name):
+            self.name = name
+            self.tools = {}
+        
+        def tool(self):
+            def decorator(func):
+                self.tools[func.__name__] = func
+                return func
+            return decorator
+        
+        async def run_stdio(self):
+            print(f"Mock MCP server '{self.name}' running in development mode")
+            print("Available tools:", list(self.tools.keys()))
+            # Simple test
+            if "analyze_content" in self.tools:
+                result = await self.tools["analyze_content"]("Hello, you can easily set up your account!")
+                print("Test analysis:", result)
+    
+    app = MockApp("Microsoft Style Guide Web")
+    
+    # Add the same tools but as regular functions for fallback
+    @app.tool()
+    async def analyze_content(text: str, analysis_type: str = "comprehensive") -> Dict[str, Any]:
+        """Analyze content against Microsoft Style Guide principles."""
+        if not text.strip():
+            return {"error": "No text provided for analysis"}
+        return await analyzer.analyze_content(text, analysis_type)
+    
+    @app.tool()
+    async def microsoft_document_reviewer(document_text: str, document_type: str = "general", 
+                                  target_audience: str = "general", review_focus: str = "all") -> Dict[str, Any]:
+        """Comprehensive document review using Microsoft Style Guide criteria."""
+        if not document_text.strip():
+            return {"error": "No document text provided for review"}
+        return await analyzer.review_document(document_text, document_type, target_audience, review_focus)
+    
+    @app.tool()
+    def get_style_guidelines(category: str = "all") -> Dict[str, Any]:
+        """Get Microsoft Style Guide guidelines."""
+        return analyzer.get_style_guidelines(category)
+    
+    @app.tool()
+    async def suggest_improvements(text: str, focus_area: str = "all") -> Dict[str, Any]:
+        """Get improvement suggestions."""
+        if not text.strip():
+            return {"error": "No text provided"}
+        return await analyzer.suggest_improvements(text, focus_area)
+    
+    @app.tool()
+    async def search_style_guide_live(query: str) -> Dict[str, Any]:
+        """Search Microsoft Style Guide."""
+        if not query.strip():
+            return {"error": "No query provided"}
+        return await analyzer.search_style_guide_live(query)
+    
+    @app.tool()
+    async def get_official_guidance(topic: str) -> Dict[str, Any]:
+        """Get official guidance."""
+        if not topic.strip():
+            return {"error": "No topic provided"}
+        return await analyzer.get_official_guidance(topic)
+
+async def main():
+    """Run the MCP server."""
+    parser = argparse.ArgumentParser(description="Microsoft Style Guide MCP Server - FastMCP Web Version")
+    parser.add_argument("--version", action="version", version="microsoft-style-guide-fastmcp-web 1.0.0")
+    parser.add_argument("--test", action="store_true", help="Run a quick test")
+    
+    args = parser.parse_args()
+    
+    if args.test:
+        # Run a quick test - use analyzer directly to avoid FastMCP tool wrapper issues
+        test_text = "You can easily configure the settings to suit your needs."
+        result = await analyzer.analyze_content(test_text)
+        print("Test Result:", json.dumps(result, indent=2))
+        
+        # Test document reviewer
+        review_result = await analyzer.review_document(test_text, "tutorial", "developer")
+        print("\nDocument Review Test:", json.dumps(review_result, indent=2))
+        
+        # Test web features
+        search_result = await analyzer.search_style_guide_live("voice tone")
+        print("\nLive Search Test:", json.dumps(search_result, indent=2))
+        return
+    
+    logger.info("Starting Microsoft Style Guide MCP Server (FastMCP Web-Enabled)")
+    
+    try:
+        if hasattr(app, 'run_stdio_async'):
+            # FastMCP
+            await app.run_stdio_async()
+        elif hasattr(app, 'run_stdio'):
+            # Standard MCP
+            await app.run_stdio()
+        else:
+            # Mock implementation
+            await app.run_stdio()
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error(f"Server error: {e}")
+        raise
+    finally:
+        # Clean up web session
+        await analyzer.close_session()
+
+if __name__ == "__main__":
+    asyncio.run(main())
