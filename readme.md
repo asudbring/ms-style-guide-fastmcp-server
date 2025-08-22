@@ -56,32 +56,7 @@ python fastmcp_setup.py --web        # Live content from Microsoft Learn
 - ✅ You want real-time search capabilities
 - ✅ You're creating content that needs official validation
 
-## 🌟 What Makes This FastMCP Version Better
-
-### Original vs FastMCP Comparison
-
-| Feature | Original Version | FastMCP Version |
-|---------|------------------|-----------------|
-| **Setup Complexity** | 600+ lines, multiple fallbacks | 200 lines, streamlined |
-| **Version Choice** | Manual file management | Automatic version selection |
-| **Dependencies** | Complex MCP + web scraping | FastMCP + minimal deps |
-| **Configuration** | Multiple JSON files | Single `mcp.json` |
-| **Cross-Platform** | Platform-specific code | Automatic detection |
-| **VS Code Integration** | Manual extension setup | Automatic global config |
-| **Copilot Chat** | Complex bridge scripts | Built-in integration |
-| **Maintenance** | High (multiple fallbacks) | Low (FastMCP handles it) |
-
-### Key Improvements
-
-- **🎯 One-Command Setup**: Everything configured automatically
-- **🔄 Version Selection**: Choose offline or web-enabled during setup
-- **🔧 Global MCP Config**: Uses VS Code's standard `mcp.json` approach
-- **💬 Built-in Copilot Chat**: Direct integration without bridge scripts
-- **🌍 Cross-Platform**: Works on Windows, macOS, and Linux
-- **⚡ Faster Startup**: FastMCP optimizes server initialization
-- **🛠️ Better Debugging**: Integrated VS Code debug configuration
-
-## 📁 Project Structure (Both Versions)
+## 📁 Project Structure
 
 ```
 ms-style-guide-fastmcp-server/
@@ -394,28 +369,7 @@ python fastmcp_style_server.py --test
 2. Check that `mcp_client.py` is executable
 3. Verify script can import the server module
 
-## 🔄 Migration from Original Version
-
-If you're upgrading from the original complex version:
-
-1. **Backup existing config** (if any):
-   ```bash
-   cp .vscode/settings.json .vscode/settings.json.backup
-   ```
-
-2. **Run FastMCP setup**:
-   ```bash
-   python fastmcp_setup.py --auto
-   ```
-
-3. **Remove old files** (optional):
-   - Complex `setup_script.py`
-   - Multiple MCP extension configs
-   - `mcp_server_web.py` (if not needed)
-
-4. **Update workflows** to use simplified commands
-
-## 🚀 Advanced Usage
+##  Advanced Usage
 
 ### Custom Analysis Types
 ```python
@@ -463,5 +417,3 @@ MIT License - see LICENSE file for details.
 ---
 
 **Built with FastMCP for better technical writing** ✨
-
-*This FastMCP version provides the same powerful Microsoft Style Guide analysis with dramatically simplified setup and enhanced VS Code integration.*
