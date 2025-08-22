@@ -1,0 +1,18 @@
+{
+  "timestamp": "20250822_095009",
+  "version": "0.9",
+  "files": [
+    "fastmcp_style_server.py",
+    "fastmcp_style_server_web.py",
+    "copilot_integration.py",
+    "requirements.txt",
+    "fastmcp_setup.py",
+    "readme.md",
+    ".vscode/settings.json",
+    "vscode_mcp_config.json",
+    "mcp_manifest.json",
+    "test_document.md",
+    "copilot_integration.py"
+  ],
+  "backup_path": "backups\\backup_20250822_095009"
+}

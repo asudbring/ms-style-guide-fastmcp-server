@@ -1,0 +1,13 @@
+# Microsoft Style Guide MCP Server - FastMCP Implementation
+# 
+# Requires Python 3.8+ for asyncio and typing support
+# 
+# Core dependencies:
+# - fastmcp: Simplified MCP server framework
+# - aiohttp: Required for web-enabled version HTTP requests
+
+# Core FastMCP dependency
+fastmcp>=0.4.0
+
+# HTTP client for web-enabled functionality
+aiohttp>=3.8.0
