@@ -1,0 +1,12 @@
+{
+  "repository": {
+    "owner": "asudbring",
+    "name": "ms-style-guide-fastmcp-server",
+    "branch": "main"
+  },
+  "update_settings": {
+    "auto_update": false,
+    "backup_retention_days": 30,
+    "check_interval_hours": 24
+  }
+}
