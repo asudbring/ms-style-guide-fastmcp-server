@@ -139,10 +139,10 @@ analyze this content for Microsoft Style Guide compliance:
 "Welcome to our new product! You can easily configure the settings."
 
 check voice and tone of this text:
-"The configuration can be accomplished by users through the interface."
+"Users can configure settings through the interface."
 
 suggest improvements for this writing:
-"Users should utilize the functionality to facilitate optimal performance."
+"Users should use the functionality to optimize performance."
 
 show Microsoft Style Guide guidelines for accessibility
 ```
@@ -389,7 +389,7 @@ pip install mcp
 python fastmcp_style_server.py --test
 ```
 
-### Copilot Chat Not Working
+### Copilot Chat Isn't Working
 1. Ensure GitHub Copilot Chat extension is installed
 2. Check that `mcp_client.py` is executable
 3. Verify script can import the server module

@@ -18,7 +18,7 @@ This document explains how to use the MCP server updater script to keep your Mic
 python mcp_updater.py check
 ```
 
-This will check if updates are available and display version information.
+This checks if updates are available and displays version information.
 
 ### Perform Update
 
@@ -26,7 +26,7 @@ This will check if updates are available and display version information.
 python mcp_updater.py update
 ```
 
-This will download and apply updates if available. A backup will be created automatically.
+This downloads and applies updates if available. The system creates a backup automatically.
 
 ### Force Update
 
@@ -34,7 +34,7 @@ This will download and apply updates if available. A backup will be created auto
 python mcp_updater.py update --force
 ```
 
-This will force an update even if no new version is detected.
+This forces an update even if the system detects no new version.
 
 ### Show Status
 
@@ -73,7 +73,7 @@ The updater reads configuration from `update_config.json`:
 
 ## Files Updated
 
-The following files are updated during an update:
+The updater updates these files during an update:
 
 - `fastmcp_style_server.py` - Main MCP server implementation
 - `fastmcp_style_server_web.py` - Web-enabled MCP server
@@ -126,7 +126,7 @@ This usually means:
 
 ### Error: HTTP session not available
 
-This means `aiohttp` is not installed. Install it with:
+This means `aiohttp` isn't installed. Install it with:
 
 ```bash
 pip install aiohttp
@@ -134,7 +134,7 @@ pip install aiohttp
 
 ### Update fails during file extraction
 
-The updater will automatically restore from backup. Check the error message and ensure:
+The updater automatically restores from backup. Check the error message and ensure:
 - You have write permissions to the directory
 - No files are currently in use by other processes
 - Sufficient disk space is available
@@ -165,4 +165,4 @@ After an update, you may need to:
 2. Restart the MCP server
 3. Reload any MCP configurations
 
-The updater will notify you when a restart is required.
+The updater notifies you when you need to restart.
