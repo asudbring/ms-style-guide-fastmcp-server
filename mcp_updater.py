@@ -27,6 +27,7 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
     import urllib.request
     import urllib.parse
+    import urllib.error
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,31 +37,37 @@ class MCPServerUpdater:
     """Handles updating the MCP server from GitHub repository."""
     
     def __init__(self, 
-                 repo_owner: str = "your-username",
-                 repo_name: str = "mslearn-authoring-mcp-server",
-                 current_version: str = "1.0.0"):
+                 repo_owner: Optional[str] = None,
+                 repo_name: Optional[str] = None,
+                 current_version: Optional[str] = None,
+                 config_file: str = "update_config.json"):
         """Initialize the updater.
         
         Args:
             repo_owner: GitHub repository owner
             repo_name: GitHub repository name  
             current_version: Current version of the MCP server
+            config_file: Path to configuration file
         """
-        self.repo_owner = repo_owner
-        self.repo_name = repo_name
-        self.current_version = current_version
+        # Load configuration from file
+        self.config = self._load_config(config_file)
+        
+        # Use provided values or fall back to config, then defaults
+        self.repo_owner = repo_owner or self.config.get("repository", {}).get("owner", "asudbring")
+        self.repo_name = repo_name or self.config.get("repository", {}).get("name", "ms-style-guide-fastmcp-server")
+        self.current_version = current_version or self._detect_current_version()
         self.github_api_base = "https://api.github.com"
-        self.repo_api_url = f"{self.github_api_base}/repos/{repo_owner}/{repo_name}"
+        self.repo_api_url = f"{self.github_api_base}/repos/{self.repo_owner}/{self.repo_name}"
         self.session = None
         
         # Files to update (can be configured)
         self.update_files = [
-            "mcp_server.py",
-            "mcp_server_web.py", 
-            "mcp_client.py",
+            "fastmcp_style_server.py",
+            "fastmcp_style_server_web.py", 
+            "copilot_integration.py",
             "requirements.txt",
-            "setup_script.py",
-            "README.md"
+            "fastmcp_setup.py",
+            "readme.md"
         ]
         
         # Files to preserve during update
@@ -75,6 +82,62 @@ class MCPServerUpdater:
         # Backup directory
         self.backup_dir = Path("backups")
         
+    def _load_config(self, config_file: str) -> Dict[str, Any]:
+        """Load configuration from JSON file."""
+        try:
+            config_path = Path(config_file)
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    return json.load(f)
+            else:
+                logger.warning(f"Config file not found: {config_file}, using defaults")
+                return {}
+        except Exception as e:
+            logger.error(f"Error loading config file {config_file}: {e}")
+            return {}
+    
+    def _detect_current_version(self) -> str:
+        """Detect current version from git or default."""
+        try:
+            # Try to read from version file first
+            version_file = Path(".mcp_version")
+            if version_file.exists():
+                with open(version_file, 'r') as f:
+                    version = f.read().strip()
+                    if version:
+                        return version
+        except Exception:
+            pass
+        
+        try:
+            # Try to get version from git tag
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--exact-match", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=Path.cwd()
+            )
+            if result.returncode == 0:
+                return result.stdout.strip().lstrip("v")
+        except Exception:
+            pass
+        
+        try:
+            # Try to get current commit hash as fallback
+            result = subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=Path.cwd()
+            )
+            if result.returncode == 0:
+                return f"git-{result.stdout.strip()}"
+        except Exception:
+            pass
+        
+        # Default fallback
+        return "1.0.0"
+    
     async def get_session(self):
         """Get or create HTTP session."""
         if AIOHTTP_AVAILABLE:
@@ -93,41 +156,121 @@ class MCPServerUpdater:
     async def check_for_updates(self) -> Dict[str, Any]:
         """Check if updates are available from GitHub."""
         try:
-            # Get latest release info
+            # First try to get latest release info
             releases_url = f"{self.repo_api_url}/releases/latest"
             
             if AIOHTTP_AVAILABLE:
                 session = await self.get_session()
-                async with session.get(releases_url) as response:
-                    if response.status == 200:
-                        release_data = await response.json()
-                    else:
-                        raise Exception(f"GitHub API error: {response.status}")
+                if session:
+                    async with session.get(releases_url) as response:
+                        if response.status == 200:
+                            release_data = await response.json()
+                            latest_version = release_data.get("tag_name", "").lstrip("v")
+                            release_notes = release_data.get("body", "")
+                            published_at = release_data.get("published_at", "")
+                            download_url = release_data.get("zipball_url", "")
+                            
+                            # Compare versions (simple string comparison for now)
+                            update_available = latest_version != self.current_version
+                            
+                            return {
+                                "update_available": update_available,
+                                "current_version": self.current_version,
+                                "latest_version": latest_version,
+                                "release_notes": release_notes,
+                                "published_at": published_at,
+                                "download_url": download_url,
+                                "release_data": release_data,
+                                "update_method": "release"
+                            }
+                        elif response.status == 404:
+                            # No releases available, try to get latest commit from main branch
+                            return await self._check_latest_commit()
+                        else:
+                            raise Exception(f"GitHub API error: {response.status}")
+                else:
+                    raise Exception("HTTP session not available")
             else:
                 # Fallback to urllib
-                with urllib.request.urlopen(releases_url) as response:
-                    release_data = json.loads(response.read().decode())
+                try:
+                    with urllib.request.urlopen(releases_url) as response:
+                        release_data = json.loads(response.read().decode())
+                        latest_version = release_data.get("tag_name", "").lstrip("v")
+                        release_notes = release_data.get("body", "")
+                        published_at = release_data.get("published_at", "")
+                        download_url = release_data.get("zipball_url", "")
+                        
+                        # Compare versions (simple string comparison for now)
+                        update_available = latest_version != self.current_version
+                        
+                        return {
+                            "update_available": update_available,
+                            "current_version": self.current_version,
+                            "latest_version": latest_version,
+                            "release_notes": release_notes,
+                            "published_at": published_at,
+                            "download_url": download_url,
+                            "release_data": release_data,
+                            "update_method": "release"
+                        }
+                except urllib.error.HTTPError as e:
+                    if e.code == 404:
+                        # No releases available, try to get latest commit from main branch
+                        return await self._check_latest_commit()
+                    else:
+                        raise Exception(f"GitHub API error: {e.code}")
             
-            latest_version = release_data.get("tag_name", "").lstrip("v")
-            release_notes = release_data.get("body", "")
-            published_at = release_data.get("published_at", "")
-            download_url = release_data.get("zipball_url", "")
+        except Exception as e:
+            logger.error(f"Error checking for updates: {e}")
+            return {
+                "update_available": False,
+                "error": str(e),
+                "current_version": self.current_version
+            }
+    
+    async def _check_latest_commit(self) -> Dict[str, Any]:
+        """Check latest commit from main branch when no releases are available."""
+        try:
+            branch = self.config.get("repository", {}).get("branch", "main")
+            commits_url = f"{self.repo_api_url}/commits/{branch}"
             
-            # Compare versions (simple string comparison for now)
-            update_available = latest_version != self.current_version
+            if AIOHTTP_AVAILABLE:
+                session = await self.get_session()
+                if session:
+                    async with session.get(commits_url) as response:
+                        if response.status == 200:
+                            commit_data = await response.json()
+                        else:
+                            raise Exception(f"GitHub API error: {response.status}")
+                else:
+                    raise Exception("HTTP session not available")
+            else:
+                # Fallback to urllib
+                with urllib.request.urlopen(commits_url) as response:
+                    commit_data = json.loads(response.read().decode())
+            
+            latest_commit = commit_data.get("sha", "")[:7]  # Short commit hash
+            commit_message = commit_data.get("commit", {}).get("message", "")
+            commit_date = commit_data.get("commit", {}).get("committer", {}).get("date", "")
+            download_url = f"https://github.com/{self.repo_owner}/{self.repo_name}/archive/{branch}.zip"
+            
+            # Compare with current version
+            current_commit = self.current_version.replace("git-", "") if self.current_version.startswith("git-") else ""
+            update_available = latest_commit != current_commit and latest_commit != ""
             
             return {
                 "update_available": update_available,
                 "current_version": self.current_version,
-                "latest_version": latest_version,
-                "release_notes": release_notes,
-                "published_at": published_at,
+                "latest_version": f"git-{latest_commit}",
+                "release_notes": f"Latest commit: {commit_message}",
+                "published_at": commit_date,
                 "download_url": download_url,
-                "release_data": release_data
+                "commit_data": commit_data,
+                "update_method": "commit"
             }
             
         except Exception as e:
-            logger.error(f"Error checking for updates: {e}")
+            logger.error(f"Error checking latest commit: {e}")
             return {
                 "update_available": False,
                 "error": str(e),
@@ -141,13 +284,16 @@ class MCPServerUpdater:
             
             if AIOHTTP_AVAILABLE:
                 session = await self.get_session()
-                async with session.get(download_url) as response:
-                    if response.status == 200:
-                        with open(target_path, 'wb') as f:
-                            async for chunk in response.content.iter_chunked(8192):
-                                f.write(chunk)
-                    else:
-                        raise Exception(f"Download failed: {response.status}")
+                if session:
+                    async with session.get(download_url) as response:
+                        if response.status == 200:
+                            with open(target_path, 'wb') as f:
+                                async for chunk in response.content.iter_chunked(8192):
+                                    f.write(chunk)
+                        else:
+                            raise Exception(f"Download failed: {response.status}")
+                else:
+                    raise Exception("HTTP session not available")
             else:
                 # Fallback to urllib
                 urllib.request.urlretrieve(download_url, target_path)
@@ -198,7 +344,7 @@ class MCPServerUpdater:
             logger.error(f"Error creating backup: {e}")
             raise
     
-    def extract_and_apply_update(self, zip_path: Path, backup_path: str) -> bool:
+    def extract_and_apply_update(self, zip_path: Path, backup_path: str, update_info: Dict[str, Any]) -> bool:
         """Extract downloaded update and apply changes."""
         try:
             # Extract to temporary directory
@@ -226,6 +372,13 @@ class MCPServerUpdater:
                     if source_file.exists():
                         # Verify file integrity (basic check)
                         if source_file.stat().st_size > 0:
+                            # Create backup of existing file if it exists
+                            if dest_file.exists():
+                                backup_file = Path(backup_path) / file_name
+                                backup_file.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(dest_file, backup_file)
+                            
+                            # Copy new file
                             shutil.copy2(source_file, dest_file)
                             updated_files.append(file_name)
                             logger.info(f"Updated: {file_name}")
@@ -238,6 +391,12 @@ class MCPServerUpdater:
                 requirements_file = current_dir / "requirements.txt"
                 if requirements_file.exists() and "requirements.txt" in updated_files:
                     logger.info("Requirements.txt updated - you may need to reinstall dependencies")
+                
+                # Update version tracking if this was a commit-based update
+                if update_info.get("update_method") == "commit":
+                    version_file = current_dir / ".mcp_version"
+                    with open(version_file, "w") as f:
+                        f.write(update_info.get("latest_version", ""))
                 
                 logger.info(f"Update applied successfully. Updated {len(updated_files)} files.")
                 return True
@@ -326,7 +485,7 @@ class MCPServerUpdater:
                 
                 # Apply update
                 logger.info("Applying update...")
-                if self.extract_and_apply_update(zip_path, backup_path):
+                if self.extract_and_apply_update(zip_path, backup_path, update_info):
                     # Update version info if available
                     new_version = update_info.get("latest_version", "unknown")
                     
@@ -466,13 +625,13 @@ Examples:
     )
     parser.add_argument(
         "--repo-owner",
-        default="your-username",
-        help="GitHub repository owner (default: your-username)"
+        default="asudbring",
+        help="GitHub repository owner (default: asudbring)"
     )
     parser.add_argument(
         "--repo-name", 
-        default="mslearn-authoring-mcp-server",
-        help="GitHub repository name (default: mslearn-authoring-mcp-server)"
+        default="ms-style-guide-fastmcp-server",
+        help="GitHub repository name (default: ms-style-guide-fastmcp-server)"
     )
     parser.add_argument(
         "--backup-path",
