@@ -64,7 +64,6 @@ ms-style-guide-fastmcp-server/
 ├── fastmcp_style_server_web.py     # Web-enabled FastMCP server  
 ├── fastmcp_setup.py                # Intelligent setup script
 ├── mcp.json                        # VS Code MCP configuration
-├── mcp_client.py                   # MCP client utilities
 ├── copilot_usage.md                # Usage examples and documentation
 ├── requirements.txt                # Python dependencies
 └── readme.md                       # This file
@@ -262,13 +261,7 @@ python fastmcp_style_server.py --test
 python fastmcp_style_server_web.py --test
 ```
 
-### 2. Test Copilot Integration
-```bash
-# Test with your installed version
-python mcp_client.py analyze "Hello, you can easily set up your account!"
-```
-
-### 3. Test in VS Code
+### 2. Test in VS Code
 1. Open a markdown file for testing
 2. Use Copilot Chat: `@workspace analyze this document`
 3. Check that MCP tools appear in Command Palette
@@ -366,8 +359,8 @@ python fastmcp_style_server.py --test
 
 ### Copilot Chat Isn't Working
 1. Ensure GitHub Copilot Chat extension is installed
-2. Check that `mcp_client.py` is executable
-3. Verify script can import the server module
+2. Verify MCP server is running and accessible
+3. Check VS Code Developer Console for MCP errors
 
 ##  Advanced Usage
 
@@ -381,11 +374,15 @@ guidelines = analyzer.get_style_guidelines("accessibility")
 ```
 
 ### Batch Processing
-```bash
-# Analyze multiple files using mcp_client
-for file in *.md; do
-    python mcp_client.py analyze "$(cat $file)"
-done
+```python
+# Analyze multiple files using the server directly
+from fastmcp_style_server import analyzer
+
+for file in ["README.md", "docs/guide.md"]:
+    with open(file, 'r') as f:
+        content = f.read()
+        result = analyzer.analyze_content(content)
+        print(f"{file}: {result}")
 ```
 
 ### CI/CD Integration
@@ -393,7 +390,8 @@ done
 # GitHub Actions example
 - name: Check Style Guide Compliance
   run: |
-    python mcp_client.py analyze "$(cat README.md)"
+    python fastmcp_style_server.py --test
+    # Add your analysis workflow here
 ```
 
 ## 🤝 Contributing
